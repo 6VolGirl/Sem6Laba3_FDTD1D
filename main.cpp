@@ -26,6 +26,20 @@ static void runCase(const SimulationParameters& base,
     sim.run();
     sim.writeFieldCSV(filename);
 }
+static void runCase2(const SimulationParameters& base,
+                    SimulationParameters::SourceType st,
+                    SimulationParameters::InjectionType it,
+                    const std::string& filename,
+                    const MaterialLayout& layout)
+{
+    SimulationParameters p = base;
+    p.sourceType    = st;
+    p.injectionType = it;
+
+    FDTD1D sim(p, layout);
+    sim.run();
+    sim.writeFieldCSV(filename);
+}
 
 int main() {
     SimulationParameters base;
@@ -42,6 +56,12 @@ int main() {
 
     // Источник
     base.source_pos   = 200;
+    //
+    // const double fMin_src = 1.0 / 900.0;
+    // const double fMax_src = 1.0 / 300.0;
+    // base.sourceFreq   = 0.5 * (fMin_src + fMax_src);  // ~ 0.002222
+    // base.sourceFWidth = fMax_src - fMin_src;
+    //
     base.sourceFreq   = 0.05;   // период ~ 20 шагов по времени => ~40 ячеек на λ
     base.sourceFWidth = 0.02;
     base.sourceType     = SimulationParameters::GAUSS;
@@ -66,8 +86,8 @@ int main() {
         runCase(base, SimulationParameters::GAUSS, SimulationParameters::CURRENT, "field_Gauss_current.csv");
 
 
-        //  Задания 3: анализ спектра отражения от PML
-        std::cout << "\n=== Tasks 3: PML reflection analysis ===\n";
+        //  Задания 1.3: анализ спектра отражения от PML
+        std::cout << "\n=== Tasks 1.3: PML reflection analysis ===\n";
 
 
         PMLAnalysis::Config cfg;
@@ -78,7 +98,7 @@ int main() {
 
         PMLAnalysis analysis(base, cfg);
 
-        // Задание 4: спектр R(f) для трёх профилей, width=20
+        // Задание 1.4: спектр R(f) для трёх профилей, width=20
         std::cout << "\n--- Spectra vs profile (width=20) ---\n";
         analysis.task4_spectraVsProfile(20, {0, 2, 3});
 
@@ -94,9 +114,23 @@ int main() {
             std::cout << fname << " written\n";
         }
 
-        // ── Задание 5: R_max(width) для трёх профилей ─────────────
+        // Задание 1.5: R_max(width) для трёх профилей
         std::cout << "\n--- R_max vs width for profiles 0, 2, 3 ---\n";
         analysis.task5_maxRvsWidth({5, 8, 10, 15, 20, 25, 30}, {0, 2, 3});
+
+
+
+//─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        //  Задание 2: отражение от кварца R(λ)
+        std::cout << "\n=== Task 2.3: Reflection from SiO2 half-space ===\n";
+
+
+        // Материал: кварц в правой половине
+        MaterialLayout layout;
+        layout.add(MaterialRegion::Silica(base.nx / 2, base.nx));
+
+        runCase2(base, SimulationParameters::GAUSS, SimulationParameters::SOFT, "field_Gauss_soft_Silica.csv", layout);
+
 
 
         std::cout << "All runs finished.\n";

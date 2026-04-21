@@ -23,6 +23,25 @@ FDTD1D::FDTD1D(const SimulationParameters& p)
     sigmaM_ = pml_.sigmaM;
 }
 
+FDTD1D::FDTD1D(const SimulationParameters& p, const MaterialLayout& layout)
+    : p_(p),
+      Ex_(p.nx + 1, 0.0),
+      Hy_(p.nx,     0.0),
+      eps_(p.nx + 1, p.eps0),   // сначала заполняем вакуумом
+      mu_ (p.nx,     p.mu0),
+      pml_(p.nx, p.pmlThickness, p.eps0, p.mu0,
+           p.pmlDamping, p.pmlProfilePower, p.dx),
+      cw_(p.sourceFreq),
+      gauss_(p.sourceFreq, p.sourceFWidth)
+{
+    sigmaE_ = pml_.sigmaE;
+    sigmaM_ = pml_.sigmaM;
+
+    layout.applyTo(eps_, mu_);
+}
+
+
+
 double FDTD1D::sourceValue(double t) const {
     if (p_.sourceType == SimulationParameters::CW) {
         return cw_(t);

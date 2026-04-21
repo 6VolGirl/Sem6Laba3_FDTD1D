@@ -11,9 +11,10 @@
 #include "Sources.h"
 #include "PMLCoefficients.h"
 #include "Monitor.h"
+#include "Material.h"
 
 class FDTD1D {
-    const SimulationParameters& p_;
+    const SimulationParameters& p_;    //удобнее по значению, а не поссылке
 
     std::vector<double> Ex_;
     std::vector<double> Hy_;
@@ -36,6 +37,9 @@ class FDTD1D {
 
 public:
     explicit FDTD1D(const SimulationParameters& p);
+
+    // Второй конструктор для материала
+    FDTD1D(const SimulationParameters& p, const MaterialLayout& layout);
 
     void run();
     void writeFieldCSV(const std::string& filename) const;
