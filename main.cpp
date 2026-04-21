@@ -10,6 +10,7 @@
 #include "SimulationParameters.h"
 #include "FDTD1D.h"
 #include "PMLAnalysis.h"
+#include "DielectricAnalysis.h"
 
 
 
@@ -45,31 +46,31 @@ int main() {
     SimulationParameters base;
 
     // Сетка
-    base.nx            = 1500;
+    base.nx            = 2000;
     base.dx            = 1.0;
     base.courantNumber = 0.5;
-    base.dt            = base.courantNumber * base.dx; // = 0.5
-    base.numTimeSteps  = 2000;
+    base.dt            = base.courantNumber * base.dx;
+    base.numTimeSteps  = 30000;
 
     base.eps0 = 1.0;
     base.mu0  = 1.0;
 
     // Источник
-    base.source_pos   = 200;
+    base.source_pos   = 600;
     //
-    // const double fMin_src = 1.0 / 900.0;
-    // const double fMax_src = 1.0 / 300.0;
-    // base.sourceFreq   = 0.5 * (fMin_src + fMax_src);  // ~ 0.002222
-    // base.sourceFWidth = fMax_src - fMin_src;
+    const double fMin_src = 1.0 / 900.0;
+    const double fMax_src = 1.0 / 300.0;
+    base.sourceFreq   = 0.5 * (fMin_src + fMax_src);  // ~ 0.002222
+    base.sourceFWidth = fMax_src - fMin_src;
     //
-    base.sourceFreq   = 0.05;   // период ~ 20 шагов по времени => ~40 ячеек на λ
-    base.sourceFWidth = 0.02;
+    //base.sourceFreq   = 0.05;   // период ~ 20 шагов по времени => ~40 ячеек на λ
+    //base.sourceFWidth = 0.02;
     base.sourceType     = SimulationParameters::GAUSS;
     base.injectionType  = SimulationParameters::SOFT;
 
 
-    base.pmlThickness   = 20;
-    base.pmlDamping     = 1e-4;
+    base.pmlThickness   = 30;
+    base.pmlDamping     = 1e-8;
     base.pmlProfilePower = 3;
 
 
@@ -78,45 +79,45 @@ int main() {
     const int monitorPos = base.nx - base.pmlThickness - 15;
 
     try {
-        //  Задания 0: запись полей для разных источников
-        std::cout << "\n=== Tasks 1-2: field snapshots ===\n";
-        runCase(base, SimulationParameters::CW,    SimulationParameters::SOFT,    "field_CW_soft.csv");
-        runCase(base, SimulationParameters::CW,    SimulationParameters::CURRENT, "field_CW_current.csv");
-        runCase(base, SimulationParameters::GAUSS, SimulationParameters::SOFT,    "field_Gauss_soft.csv");
-        runCase(base, SimulationParameters::GAUSS, SimulationParameters::CURRENT, "field_Gauss_current.csv");
-
-
-        //  Задания 1.3: анализ спектра отражения от PML
-        std::cout << "\n=== Tasks 1.3: PML reflection analysis ===\n";
-
-
-        PMLAnalysis::Config cfg;
-        cfg.fMin          = 0.005;
-        cfg.fMax          = 0.09;
-        cfg.nFreqs        = 300;
-        cfg.monitorOffset = 150;     // монитор на 150 ячеек левее источника
-
-        PMLAnalysis analysis(base, cfg);
-
-        // Задание 1.4: спектр R(f) для трёх профилей, width=20
-        std::cout << "\n--- Spectra vs profile (width=20) ---\n";
-        analysis.task4_spectraVsProfile(20, {0, 2, 3});
-
-        // Дополнительно: спектр для нескольких толщин при кубическом профиле
-        std::cout << "\n--- Spectra for cubic profile, varying width ---\n";
-        for (int w : {5, 10, 20, 30}) {
-            auto spec = analysis.runOne(w, 3);
-            std::string fname = "reflection_cubic_width_" + std::to_string(w) + ".csv";
-
-            std::ofstream out(fname);
-            out << "freq,R\n" << std::scientific;
-            for (auto& [f, R] : spec) out << f << "," << R << "\n";
-            std::cout << fname << " written\n";
-        }
-
-        // Задание 1.5: R_max(width) для трёх профилей
-        std::cout << "\n--- R_max vs width for profiles 0, 2, 3 ---\n";
-        analysis.task5_maxRvsWidth({5, 8, 10, 15, 20, 25, 30}, {0, 2, 3});
+        // //  Задания 0: запись полей для разных источников
+        // std::cout << "\n=== Tasks 1-2: field snapshots ===\n";
+        // runCase(base, SimulationParameters::CW,    SimulationParameters::SOFT,    "field_CW_soft.csv");
+        // runCase(base, SimulationParameters::CW,    SimulationParameters::CURRENT, "field_CW_current.csv");
+        // runCase(base, SimulationParameters::GAUSS, SimulationParameters::SOFT,    "field_Gauss_soft.csv");
+        // runCase(base, SimulationParameters::GAUSS, SimulationParameters::CURRENT, "field_Gauss_current.csv");
+        //
+        //
+        // //  Задания 1.3: анализ спектра отражения от PML
+        // std::cout << "\n=== Tasks 1.3: PML reflection analysis ===\n";
+        //
+        //
+        // PMLAnalysis::Config cfg;
+        // cfg.fMin          = 0.005;
+        // cfg.fMax          = 0.09;
+        // cfg.nFreqs        = 300;
+        // cfg.monitorOffset = 150;     // монитор на 150 ячеек левее источника
+        //
+        // PMLAnalysis analysis(base, cfg);
+        //
+        // // Задание 1.4: спектр R(f) для трёх профилей, width=20
+        // std::cout << "\n--- Spectra vs profile (width=20) ---\n";
+        // analysis.task4_spectraVsProfile(20, {0, 2, 3});
+        //
+        // // Дополнительно: спектр для нескольких толщин при кубическом профиле
+        // std::cout << "\n--- Spectra for cubic profile, varying width ---\n";
+        // for (int w : {5, 10, 20, 30}) {
+        //     auto spec = analysis.runOne(w, 3);
+        //     std::string fname = "reflection_cubic_width_" + std::to_string(w) + ".csv";
+        //
+        //     std::ofstream out(fname);
+        //     out << "freq,R\n" << std::scientific;
+        //     for (auto& [f, R] : spec) out << f << "," << R << "\n";
+        //     std::cout << fname << " written\n";
+        // }
+        //
+        // // Задание 1.5: R_max(width) для трёх профилей
+        // std::cout << "\n--- R_max vs width for profiles 0, 2, 3 ---\n";
+        // analysis.task5_maxRvsWidth({5, 8, 10, 15, 20, 25, 30}, {0, 2, 3});
 
 
 
@@ -129,7 +130,22 @@ int main() {
         MaterialLayout layout;
         layout.add(MaterialRegion::Silica(base.nx / 2, base.nx));
 
+         DielectricAnalysis::ConfigDiel cfgD;
+        cfgD.lambdaMin     = 300.0;    // нм
+        cfgD.lambdaMax     = 900.0;    // нм
+        cfgD.nWavelengths  = 300;
+        cfgD.monitorOffset = 150;      // монитор на 150 ячеек левее источника
+        cfgD.a_nm          = 1.0;      // 1 ячейка = 1 нм
+
+        DielectricAnalysis analysisDiel(base, layout, cfgD);
+        analysisDiel.run();
+
         runCase2(base, SimulationParameters::GAUSS, SimulationParameters::SOFT, "field_Gauss_soft_Silica.csv", layout);
+
+
+        // Записываем: lambda_nm, R_fdtd, R_theory
+        analysisDiel.writeCSV("silica_reflection.csv", 1.0,1.45);
+
 
 
 
