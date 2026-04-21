@@ -13,9 +13,15 @@ FDTD1D::FDTD1D(const SimulationParameters& p)
     : p_(p),
       Ex_(p.nx + 1, 0.0),
       Hy_(p.nx,     0.0),
+      eps_(p.nx + 1, p.eps0),
+      mu_(p.nx,     p.mu0),
+      pml_(p.nx, p.pmlThickness, p.eps0, p.mu0, p.pmlDamping, p.pmlProfilePower, p.dx),
       cw_(p.sourceFreq),
       gauss_(p.sourceFreq, p.sourceFWidth)
-{}
+{
+    sigmaE_ = pml_.sigmaE;
+    sigmaM_ = pml_.sigmaM;
+}
 
 double FDTD1D::sourceValue(double t) const {
     if (p_.sourceType == SimulationParameters::CW) {
@@ -28,24 +34,35 @@ double FDTD1D::sourceValue(double t) const {
 void FDTD1D::run() {
     snapshotsEx_.clear();
 
-    // Коэффициенты для однородной немагнитной среды (c = 1)
-    const double cE = p_.dt / (p_.eps0 * p_.dx);
-    const double cH = p_.dt / (p_.mu0  * p_.dx);
+    //Учёт sigmaM
+    std::vector<double> Da(p_.nx), Db(p_.nx);
+    for (int i = 0; i < p_.nx; ++i) {
+        const double denom = 2.0 * mu_[i] + sigmaM_[i] * p_.dt;
+        Da[i] = (2.0 * mu_[i] - sigmaM_[i] * p_.dt) / denom;
+        Db[i] = (2.0 * p_.dt) / (p_.dx * denom);
+    }
+
+    //Учёт sigmaE
+    std::vector<double> Ca(p_.nx + 1), Cb(p_.nx + 1);
+    for (int i = 0; i <= p_.nx; ++i) {
+        const double denom = 2.0 * eps_[i] + sigmaE_[i] * p_.dt;
+        Ca[i] = (2.0 * eps_[i] - sigmaE_[i] * p_.dt) / denom;
+        Cb[i] = (2.0 * p_.dt) / (p_.dx * denom);
+    }
 
     for (int n = 0; n < p_.numTimeSteps; ++n) {
 
         // 1) Обновление H^{n+1/2} = H^{n-1/2} - dt/(mu*dx) * (Ex[i+1] - Ex[i])
         for (int i = 0; i < p_.nx; ++i) {
-            Hy_[i] -= cH * (Ex_[i + 1] - Ex_[i]);
+            Hy_[i] = Da[i] * Hy_[i] - Db[i] * (Ex_[i + 1] - Ex_[i]);
         }
 
         // 2) Обновление Ex^{n+1} = Ex^n + dt/(eps*dx) * (Hy[i-1] - Hy[i])
-        //    (Знак согласован со стандартной формой ∂E/∂t = -(1/eps) ∂H/∂x)
         for (int i = 1; i < p_.nx; ++i) {
-            Ex_[i] -= cE * (Hy_[i] - Hy_[i - 1]);
+            Ex_[i] = Ca[i] * Ex_[i] - Cb[i] * (Hy_[i] - Hy_[i - 1]);
         }
 
-        // Жёсткие (PEC) границы: Ex[0]=Ex[nx]=0 — будут отражать волну
+        // Границы: Ex[0]=Ex[nx]=0
         Ex_[0]       = 0.0;
         Ex_[p_.nx]   = 0.0;
 
@@ -54,15 +71,13 @@ void FDTD1D::run() {
         const double s = sourceValue(t);
 
         if (p_.injectionType == SimulationParameters::SOFT) {
-            // Мягкий источник: добавляем значение к Ex в точке
+            // Мягкий источник
             Ex_[p_.source_pos] += s;
         } else {
-            // Через плотность тока J: ∂E/∂t += -J/eps  =>  Ex -= dt/eps * J
-            // При J = s получаем инъекцию тока в одну ячейку
+            // Через плотность тока J: ∂E/∂t += -J/eps
             Ex_[p_.source_pos] -= (p_.dt / p_.eps0) * s;
         }
 
-        // Снапшот
         if ((n % p_.snapshotEvery) == 0) {
             snapshotsEx_.push_back(Ex_);
         }

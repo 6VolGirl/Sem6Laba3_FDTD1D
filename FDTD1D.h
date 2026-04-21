@@ -15,15 +15,20 @@
 class FDTD1D {
     const SimulationParameters& p_;
 
-    // Поля на Yee-сетке
-    std::vector<double> Ex_;   // размер nx+1
-    std::vector<double> Hy_;   // размер nx   (полушаг)
+    std::vector<double> Ex_;
+    std::vector<double> Hy_;
+    std::vector<double> eps_;
+    std::vector<double> mu_;
+    std::vector<double> sigmaE_;
+    std::vector<double> sigmaM_;
 
-    // Снимки Ex по времени для записи в CSV
+    PMLSigma pml_;
+
+    // Ex по времени для записи в CSV
     std::vector<std::vector<double>> snapshotsEx_;
 
     // Источники
-    CWSource       cw_;
+    CWSource cw_;
     GaussianSource gauss_;
 
     double sourceValue(double t) const;
@@ -31,11 +36,9 @@ class FDTD1D {
 public:
     explicit FDTD1D(const SimulationParameters& p);
 
-    // Запуск главного временного цикла
     void run();
-
-    // Запись массива Ex(x, t) в CSV c заголовком time_over_fL,x_tilde,Ez
     void writeFieldCSV(const std::string& filename) const;
+
 };
 
 #endif //FDTD1D_H

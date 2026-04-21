@@ -7,32 +7,32 @@
 
 
 struct SimulationParameters {
-    int    nx            = 1000;   // число ячеек по Ex
-    int    numTimeSteps  = 2000;   // число временных шагов
-    double dx            = 1.0;    // шаг по пространству (норм)
-    double dt            = 0.5;    // шаг по времени (c=1)
+    // Сетка
+    int    nx            = 1000;
+    int    numTimeSteps  = 2000;
+    double dx            = 1.0;
+    double dt            = 0.5;
     double courantNumber = 0.5;
 
-    // Параметры среды
+    //(c=1)
     double eps0 = 1.0;
     double mu0  = 1.0;
 
     // Источник
     int    source_pos    = 200;
-    double sourceFreq    = 0.05;   // частота
-    double sourceFWidth  = 0.02;   // ширина спектра для гауссова импульса
+    double sourceFreq    = 2.0;
+    double sourceFWidth  = 1.9;
 
-    // Тип источника
-    enum SourceType  { CW = 0, GAUSS = 1 };
+    enum SourceType    { CW = 0, GAUSS = 1 };
     enum InjectionType { SOFT = 0, CURRENT = 1 };
 
-    SourceType   sourceType    = GAUSS;
+    SourceType    sourceType    = GAUSS;
     InjectionType injectionType = SOFT;
 
     // PML
-    int    pmlThickness   = 20;
-    double pmlDamping     = 1e-8;
-    int    pmlProfilePower = 3;
+    int    pmlThickness   = 20;      // толщина одного слоя в ячейках
+    double pmlDamping     = 1e-8;    // delta — желаемое остаточное отражение амплитуды
+    int    pmlProfilePower = 3;      // m: 0 (const), 1 (linear), 2, 3, ...
 
     int snapshotEvery = 2;
 };
