@@ -34,6 +34,8 @@ double FDTD1D::sourceValue(double t) const {
 void FDTD1D::run() {
     snapshotsEx_.clear();
 
+    if (monitor_) monitor_->clear();
+
     //Учёт sigmaM
     std::vector<double> Da(p_.nx), Db(p_.nx);
     for (int i = 0; i < p_.nx; ++i) {
@@ -76,6 +78,10 @@ void FDTD1D::run() {
         } else {
             // Через плотность тока J: ∂E/∂t += -J/eps
             Ex_[p_.source_pos] -= (p_.dt / p_.eps0) * s;
+        }
+
+        if (monitor_) {
+            monitor_->record(Ex_);
         }
 
         if ((n % p_.snapshotEvery) == 0) {

@@ -23,6 +23,7 @@ class FDTD1D {
     std::vector<double> sigmaM_;
 
     PMLSigma pml_;
+    FieldMonitor* monitor_ = nullptr;
 
     // Ex по времени для записи в CSV
     std::vector<std::vector<double>> snapshotsEx_;
@@ -38,6 +39,8 @@ public:
 
     void run();
     void writeFieldCSV(const std::string& filename) const;
+
+    void attachMonitor(FieldMonitor* mon) { monitor_ = mon; }
 
 };
 
