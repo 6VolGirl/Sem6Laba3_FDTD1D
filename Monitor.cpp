@@ -43,10 +43,12 @@ std::vector<std::pair<double,double>> Monitor::computeReflection(double fMin,
 
     // E_ref[n] = E_tot[n] - E_inc[n]
     std::vector<double> eRef(N);
-    for (int n = 0; n < N; ++n)
+    for (int n = 0; n < N; ++n) {
         eRef[n] = tot[n] - inc[n];
+        std::cout << eRef[n] << " = " << tot[n] << " - " << inc[n] << std::endl;
+    }
 
-    // Массив частот
+    // Массив частот(равномерная секта)
     std::vector<double> freqs(nFreqs);
     const double df = (nFreqs > 1) ? (fMax - fMin) / (nFreqs - 1) : 0.0;
     for (int i = 0; i < nFreqs; ++i)
@@ -98,22 +100,26 @@ void Monitor::writeReflectionCSV(const std::string& filename,
 
 void Monitor::writeTimeSeriesCSV(const std::string& filename) const
 {
+    const auto& inc = incMon_.data;
+    const auto& tot = totMon_.data;
+
+    if (inc.empty() || tot.empty()) {
+        throw std::runtime_error("Monitor::writeTimeSeriesCSV: нет данных incident/total");
+    }
+
+    const int N = static_cast<int>(std::min(inc.size(), tot.size()));
+
     std::ofstream out(filename);
     if (!out.is_open()) {
-        std::cerr << "Monitor: cannot open " << filename << "\n";
-        return;
+        throw std::runtime_error("Monitor::writeTimeSeriesCSV: не удалось открыть файл " + filename);
     }
-    out << "t,E_inc,E_tot,E_ref\n";
-    out << std::scientific;
 
-    const int N = static_cast<int>(std::min(incMon_.data.size(),
-                                             totMon_.data.size()));
+    out << "step,time,inc,tot,eref\n";
+    out << std::scientific << std::setprecision(10);
+
     for (int n = 0; n < N; ++n) {
-        double eInc = incMon_.data[n];
-        double eTot = totMon_.data[n];
-        out << n * dt_ << "," << eInc << "," << eTot
-            << "," << (eTot - eInc) << "\n";
+        const double t    = n * dt_;
+        const double eRef = tot[n] - inc[n];
+        out << n << "," << t << "," << inc[n] << "," << tot[n] << "," << eRef << "\n";
     }
-    std::cout << "Monitor: time series written to " << filename << "\n";
 }
-
