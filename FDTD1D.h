@@ -11,6 +11,7 @@
 #include "Sources.h"
 #include "PMLCoefficients.h"
 #include "Monitor.h"
+#include "Material.h"
 
 class FDTD1D {
     const SimulationParameters& p_;
@@ -32,10 +33,14 @@ class FDTD1D {
     CWSource cw_;
     GaussianSource gauss_;
 
+
+
     double sourceValue(double t) const;
 
 public:
     explicit FDTD1D(const SimulationParameters& p);
+
+    FDTD1D(const SimulationParameters& p, const MaterialLayout& layout);
 
     void run();
     void writeFieldCSV(const std::string& filename) const;
