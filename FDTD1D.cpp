@@ -103,9 +103,10 @@ void FDTD1D::run() {
             monitor_->record(Ex_);
         }
 
-        if ((n % p_.snapshotEvery) == 0) {
-            snapshotsEx_.push_back(Ex_);
-        }
+        // if ((n % p_.snapshotEvery) == 0) {
+        //     snapshotsEx_.push_back(Ex_);
+        // }
+        snapshotsEx_.push_back(Ex_);
     }
 
     std::cout << "Simulation finished. Steps: " << p_.numTimeSteps

@@ -36,17 +36,17 @@ int main() {
     base.dx            = 1.0;
     base.courantNumber = 0.5;
     base.dt            = base.courantNumber * base.dx;
-    base.numTimeSteps  = 5000;
+    base.numTimeSteps  = 11000;
 
     base.eps0 = 1.0;
     base.mu0  = 1.0;
 
     // Источник
-    base.source_pos   = 200;
+    base.source_pos   = 300;
     base.sourceFreq   = 0.05;
     base.sourceFWidth = 0.02;
     base.sourceType     = SimulationParameters::GAUSS;
-    base.injectionType  = SimulationParameters::SOFT;
+    base.injectionType  = SimulationParameters::CURRENT;
 
 
     base.pmlThickness   = 50;
@@ -58,22 +58,22 @@ int main() {
 
 
     try {
-        //  Задания 0: запись полей для разных источников
-        {        std::cout << "\n=== Tasks 1-2: field snapshots ===\n";
-            //runCase(base, SimulationParameters::CW,    SimulationParameters::SOFT,    "field_CW_soft.csv");
-            //runCase(base, SimulationParameters::CW,    SimulationParameters::CURRENT, "field_CW_current.csv");
-            runCase(base, SimulationParameters::GAUSS, SimulationParameters::SOFT,    "field_Gauss_soft.csv");
-            //runCase(base, SimulationParameters::GAUSS, SimulationParameters::CURRENT, "field_Gauss_current.csv");
-
-            // Материал: кварц в правой половине
-            MaterialLayout layout;
-            layout.add(MaterialRegion::Silica(base.nx / 2, base.nx));
-
-            SimulationParameters p = base;
-            FDTD1D sim(p, layout);
-            sim.run();
-            sim.writeFieldCSV("field_Gauss_soft_PML.csv");
-        }
+        // //  Задания 0: запись полей для разных источников
+        // {        std::cout << "\n=== Tasks 1-2: field snapshots ===\n";
+        //     //runCase(base, SimulationParameters::CW,    SimulationParameters::SOFT,    "field_CW_soft.csv");
+        //     //runCase(base, SimulationParameters::CW,    SimulationParameters::CURRENT, "field_CW_current.csv");
+        //     runCase(base, SimulationParameters::GAUSS, SimulationParameters::SOFT,    "field_Gauss_soft.csv");
+        //     //runCase(base, SimulationParameters::GAUSS, SimulationParameters::CURRENT, "field_Gauss_current.csv");
+        //
+        //     // Материал: кварц в правой половине
+        //     MaterialLayout layout;
+        //     layout.add(MaterialRegion::Silica(base.nx / 2, base.nx));
+        //
+        //     SimulationParameters p = base;
+        //     FDTD1D sim(p, layout);
+        //     sim.run();
+        //     sim.writeFieldCSV("field_Gauss_soft_PML.csv");
+        // }
 
         // //  Задания 1: анализ спектра отражения от PML
         // {std::cout << "\n=== Tasks 3: PML reflection analysis ===\n";

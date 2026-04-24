@@ -59,10 +59,14 @@ std::vector<std::pair<double,double>> Monitor::computeReflection(double fMin,
     auto specRef = dft(eRef, dt_, freqs);
 
     // R(f) = |E_ref(f)| / |E_inc(f)|
+    double maxAmp = 0.0;
+    for (auto& c : specInc) maxAmp = std::max(maxAmp, std::abs(c));
+    const double threshold = maxAmp * 1e-3;
+
     std::vector<std::pair<double,double>> result(nFreqs);
     for (int i = 0; i < nFreqs; ++i) {
         double ampInc = std::abs(specInc[i]);
-        double R = (ampInc > 1e-30) ? std::abs(specRef[i]) / ampInc : 0.0;
+        double R = (ampInc > threshold) ? std::abs(specRef[i]) / ampInc : 0.0;
         result[i] = {freqs[i], R};
     }
     return result;

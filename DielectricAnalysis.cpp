@@ -25,12 +25,14 @@ std::vector<std::pair<double,double>> DielectricAnalysis::run()
     FDTD1D simRef(pRef);
     simRef.attachMonitor(&mon.incMonitor());
     simRef.run();
+    simRef.writeFieldCSV("field_Gauss_soft_inc.csv");
 
 
     // с диэлектриком
     FDTD1D simWork(base_, layout_);
     simWork.attachMonitor(&mon.totMonitor());
     simWork.run();
+    simRef.writeFieldCSV("field_Gauss_soft_Silica.csv");
 
     mon.writeTimeSeriesCSV("C:\\Users\\6anna\\CLionProjects\\Sem6Laba3_FDTD\\cmake-build-debug\\monitor_timeseries.csv");
 
