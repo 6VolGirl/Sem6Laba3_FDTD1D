@@ -11,6 +11,7 @@
 #include "FDTD1D.h"
 #include "PMLAnalysis.h"
 #include "DielectricAnalysis.h"
+#include "SlabAnalysis.h"
 
 
 
@@ -32,17 +33,17 @@ int main() {
     SimulationParameters base;
 
     // Сетка
-    base.nx            = 1000;
+    base.nx            = 3000;
     base.dx            = 1.0;
     base.courantNumber = 0.5;
     base.dt            = base.courantNumber * base.dx;
-    base.numTimeSteps  = 11000;
+    base.numTimeSteps  = 5000;
 
     base.eps0 = 1.0;
     base.mu0  = 1.0;
 
     // Источник
-    base.source_pos   = 300;
+    base.source_pos   = 1000;
     base.sourceFreq   = 0.05;
     base.sourceFWidth = 0.02;
     base.sourceType     = SimulationParameters::GAUSS;
@@ -58,6 +59,7 @@ int main() {
 
 
     try {
+
         // //  Задания 0: запись полей для разных источников
         // {        std::cout << "\n=== Tasks 1-2: field snapshots ===\n";
         //     //runCase(base, SimulationParameters::CW,    SimulationParameters::SOFT,    "field_CW_soft.csv");
@@ -106,34 +108,65 @@ int main() {
         //     analysis.task5_maxRvsWidth({5, 8, 10, 15, 20, 25, 30}, {0, 2, 3});
         // }
 
-        //  Задания 2: анализ спектра отражения от кварца (n = 1.45)
+        // //  Задания 2: анализ спектра отражения от кварца (n = 1.45)
+        // {
+        //
+        //     SimulationParameters pDiel = base;
+        //     // Материал: кварц в правой половине
+        //     MaterialLayout layout;
+        //     layout.add(MaterialRegion::Silica(pDiel.nx / 2, pDiel.nx));
+        //
+        //     DielectricAnalysis::ConfigDiel cfgD;
+        //     cfgD.lambdaMin     = 300.0;    // нм
+        //     cfgD.lambdaMax     = 900.0;    // нм
+        //     cfgD.nWavelengths  = 300;
+        //     cfgD.monitorOffset = 100;
+        //     cfgD.a_nm          = 1.0;
+        //
+        //     pDiel.nx = 2000;
+        //     pDiel.source_pos = 600;
+        //     pDiel.numTimeSteps = 10000;
+        //     pDiel.sourceFreq   = 0.5 * (1.0/cfgD.lambdaMax + 1.0/cfgD.lambdaMin);
+        //     pDiel.sourceFWidth = 1.0/cfgD.lambdaMin - 1.0/cfgD.lambdaMax;
+        //
+        //     DielectricAnalysis analysisDiel(base, layout, cfgD);
+        //     analysisDiel.run();
+        //
+        //     // SimulationParameters p = base;
+        //     // FDTD1D sim(p, layout);
+        //     // sim.run();
+        //     // sim.writeFieldCSV("field_Gauss_soft_PML.csv");
+        //     analysisDiel.writeCSV("silica_reflection.csv", 1.0,1.45);
+        //
+        // }
+
+        //  Задания 3: анализ спектра отражения и пропускания кварцевой пластины (n = 1.45)
         {
-            // Материал: кварц в правой половине
-            MaterialLayout layout;
-            layout.add(MaterialRegion::Silica(base.nx / 2, base.nx));
-
-            DielectricAnalysis::ConfigDiel cfgD;
-            cfgD.lambdaMin     = 300.0;    // нм
-            cfgD.lambdaMax     = 900.0;    // нм
-            cfgD.nWavelengths  = 300;
-            cfgD.monitorOffset = 100;
-            cfgD.a_nm          = 1.0;
+            SimulationParameters pSlab = base;
 
 
-            base.sourceFreq   = 0.5 * (1.0/cfgD.lambdaMax + 1.0/cfgD.lambdaMin);  // ~ 0.002
-            base.sourceFWidth = 1.0/cfgD.lambdaMin - 1.0/cfgD.lambdaMax;
 
-            DielectricAnalysis analysisDiel(base, layout, cfgD);
-            analysisDiel.run();
+            SlabAnalysis::ConfigSlab cfgSlab;
+            cfgSlab.lambdaMin     = 300.0;
+            cfgSlab.lambdaMax     = 900.0;
+            cfgSlab.nWavelengths  = 300;
+            cfgSlab.a_nm          = 1.0;
+            cfgSlab.monRefOffset  = 100;  // монитор R: source_pos - 100
+            cfgSlab.monTransOffset = 100; // монитор T: slabEnd + 50
+            cfgSlab.n1 = 1.0;
+            cfgSlab.n2 = 1.45;
 
-            // SimulationParameters p = base;
-            // FDTD1D sim(p, layout);
-            // sim.run();
-            // sim.writeFieldCSV("field_Gauss_soft_PML.csv");
-            analysisDiel.writeCSV("silica_reflection.csv", 1.0,1.45);
+            pSlab.sourceFreq   = 0.5 * (1.0/cfgSlab.lambdaMax + 1.0/cfgSlab.lambdaMin);
+            pSlab.sourceFWidth = 1.0/cfgSlab.lambdaMin - 1.0/cfgSlab.lambdaMax;
+            pSlab.nx            = 2000;
+            pSlab.source_pos    = 400;
+            pSlab.numTimeSteps  = 25000;
 
+            SlabAnalysis slabAn(pSlab, cfgSlab);
+
+            // Задание 3.4: разные L
+            slabAn.runMultipleL({100.0, 200.0, 400.0, 800.0}, "slab_");
         }
-
 
         std::cout << "All runs finished.\n";
     } catch (const std::exception& e) {
