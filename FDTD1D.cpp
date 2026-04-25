@@ -79,6 +79,9 @@ void FDTD1D::run() {
             Hy_[i] = Da[i] * Hy_[i] - Db[i] * (Ex_[i + 1] - Ex_[i]);
         }
 
+        for (FieldMonitor* mon : monitors_)
+            mon->record(Ex_, Hy_);
+
         // 2) Обновление Ex^{n+1} = Ex^n + dt/(eps*dx) * (Hy[i-1] - Hy[i])
         for (int i = 1; i < p_.nx; ++i) {
             Ex_[i] = Ca[i] * Ex_[i] - Cb[i] * (Hy_[i] - Hy_[i - 1]);
@@ -103,12 +106,12 @@ void FDTD1D::run() {
         // if (monitor_) {
         //     monitor_->record(Ex_);
         // }
-        for (FieldMonitor* mon : monitors_) mon->record(Ex_, Hy_);
+        //for (FieldMonitor* mon : monitors_) mon->record(Ex_, Hy_);
 
-        // if ((n % p_.snapshotEvery) == 0) {
-        //     snapshotsEx_.push_back(Ex_);
-        // }
-        snapshotsEx_.push_back(Ex_);
+        if ((n % p_.snapshotEvery) == 0) {
+            snapshotsEx_.push_back(Ex_);
+        }
+
     }
 
     std::cout << "Simulation finished. Steps: " << p_.numTimeSteps
