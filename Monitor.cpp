@@ -30,56 +30,8 @@ std::vector<std::complex<double>> Monitor::dft(const std::vector<double>& signal
     }
     return result;
 }
-//
-// std::vector<std::pair<double,double>> Monitor::computeReflection(double fMin,
-//                                                        double fMax, int nFreqs) const
-// {
-//     const int N = std::min(incMon_.size(), totMon_.size());
-//     if (N == 0)
-//         throw std::runtime_error("Monitor::computeReflection: нет данных.");
-//
-//     // S_inc[n] = Ex_inc[n] * Hy_inc[n]
-//     // std::vector<double> sInc(N), sTot(N), sRef(N);
-//     // for (int n = 0; n < N; ++n) {
-//     //     sInc[n] = incMon_.dataEx[n] * incMon_.dataHy[n];
-//     //     sTot[n] = totMon_.dataEx[n] * totMon_.dataHy[n];
-//     //     // S_ref = S_tot - S_inc
-//     //     sRef[n] = sTot[n] - sInc[n];
-//     // }
-//
-//     std::vector<double> sInc(N), sRef(N);
-//     for (int n = 0; n < N; ++n) {
-//         const double exInc = incMon_.dataEx[n];
-//         const double hyInc = incMon_.dataHy[n];
-//         const double exRef = totMon_.dataEx[n] - exInc;
-//         const double hyRef = totMon_.dataHy[n] - hyInc;
-//         sInc[n] = exInc * hyInc;
-//         sRef[n] = exRef * hyRef;   // S_ref = E_ref * H_ref, без перекрёстных членов
-//     }
-//
-//     std::vector<double> freqs(nFreqs);
-//     const double df = (nFreqs > 1) ? (fMax - fMin) / (nFreqs - 1) : 0.0;
-//     for (int i = 0; i < nFreqs; ++i)
-//         freqs[i] = fMin + i * df;
-//
-//     auto specInc = dft(sInc, dt_, freqs);
-//     auto specRef = dft(sRef, dt_, freqs);
-//
-//     // Относительный порог по S_inc
-//     double maxAmpInc = 0.0;
-//     for (auto& c : specInc)
-//         maxAmpInc = std::max(maxAmpInc, std::abs(c));
-//     const double threshold = maxAmpInc * 1e-3;
-//
-//     std::vector<std::pair<double,double>> result(nFreqs);
-//     for (int i = 0; i < nFreqs; ++i) {
-//         double ampInc = std::abs(specInc[i]);
-//         // R = |S_ref| / |S_inc|  — знак Пойтинга уже учтён
-//         double R = (ampInc > threshold)? std::abs(specRef[i]) / ampInc: 0.0;
-//         result[i] = {freqs[i], R};
-//     }
-//     return result;
-// }
+
+
 std::vector<std::pair<double,double>>
 Monitor::computeReflection(double fMin, double fMax, int nFreqs) const
 {
