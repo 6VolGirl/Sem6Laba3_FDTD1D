@@ -50,6 +50,8 @@ public:
         if (mon) monitors_.push_back(mon);
     }
 
+    void clearMonitors() { monitors_.clear(); }
+
 };
 
 #endif //FDTD1D_H

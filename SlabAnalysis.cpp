@@ -22,9 +22,12 @@ static void writeSlabTimeSeriesCSV(const std::string&   filename,
                                     double               dt)
 {
     const int N = static_cast<int>(
-        std::min({ incMon.data.size(),
-                   totMon.data.size(),
-                   transMon.data.size() })
+    std::min({ incMon.dataEx.size(),
+               incMon.dataHy.size(),
+               totMon.dataEx.size(),
+               totMon.dataHy.size(),
+               transMon.dataEx.size(),
+               transMon.dataHy.size() })
     );
 
     if (N == 0) {
@@ -38,18 +41,37 @@ static void writeSlabTimeSeriesCSV(const std::string&   filename,
         return;
     }
 
-    out << "step,time,inc,tot,eref,trans\n";
+    out << "step,time,"
+        << "Ex_inc,Hy_inc,S_inc,"
+        << "Ex_tot,Hy_tot,S_tot,"
+        << "Ex_ref,Hy_ref,S_ref,"
+        << "Ex_trans,Hy_trans,S_trans\n";
     out << std::scientific << std::setprecision(10);
 
     for (int n = 0; n < N; ++n) {
         const double t    = n * dt;
-        const double eRef = totMon.data[n] - incMon.data[n];
-        out << n       << ","
-            << t       << ","
-            << incMon.data[n]   << ","
-            << totMon.data[n]   << ","
-            << eRef             << ","
-            << transMon.data[n] << "\n";
+
+        const double exInc = incMon.dataEx[n];
+        const double hyInc = incMon.dataHy[n];
+        const double sInc  = exInc * hyInc;
+
+        const double exTot = totMon.dataEx[n];
+        const double hyTot = totMon.dataHy[n];
+        const double sTot  = exTot * hyTot;
+
+        const double exRef = exTot - exInc;
+        const double hyRef = hyTot - hyInc;
+        const double sRef  = exRef * hyRef;
+
+        const double exTr  = transMon.dataEx[n];
+        const double hyTr  = transMon.dataHy[n];
+        const double sTr   = exTr * hyTr;
+
+        out << n     << "," << t     << ","
+            << exInc << "," << hyInc << "," << sInc << ","
+            << exTot << "," << hyTot << "," << sTot << ","
+            << exRef << "," << hyRef << "," << sRef << ","
+            << exTr  << "," << hyTr  << "," << sTr  << "\n";
     }
 
     std::cout << "Timeseries written to " << filename
@@ -106,8 +128,10 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
         sim.run();
     }
 
-    std::vector<double> transInc = transMon.data;
+    const std::vector<double> transIncEx = transMon.dataEx;
+    const std::vector<double> transIncHy = transMon.dataHy;
     transMon.clear();
+
 
     //  с пластиной - totMon + transMon
     {
@@ -141,7 +165,10 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
 
     // T(f) — ДПФ transMon / ДПФ transInc (вакуумный прогон)
     const int N = static_cast<int>(
-        std::min(transInc.size(), transMon.data.size())
+    std::min({transIncEx.size(),
+               transIncHy.size(),
+               transMon.dataEx.size(),
+               transMon.dataHy.size()})
     );
 
     // ДПФ
@@ -158,6 +185,11 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
         return std::sqrt(re*re + im*im);
     };
 
+    std::vector<double> sTransInc(N), sTransWork(N);
+    for (int n = 0; n < N; ++n) {
+        sTransInc[n]  = transIncEx[n]        * transIncHy[n];
+        sTransWork[n] = transMon.dataEx[n]   * transMon.dataHy[n];
+    }
 
     result_.clear();
     result_.reserve(nF);
@@ -168,8 +200,8 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
         const double lam = (f > 1e-30) ? (cfgS_.a_nm / f) : 0.0;
 
         // T_ampl = |E_trans_work| / |E_trans_vac|
-        const double ampTransWork = dftManual(transMon.data, f);
-        const double ampTransInc  = dftManual(transInc,      f);
+        const double ampTransWork = dftManual(sTransWork, f);
+        const double ampTransInc  = dftManual(sTransInc, f);
         const double T_ampl = (ampTransInc > 1e-30)
                               ? ampTransWork / ampTransInc : 0.0;
         const double T = T_ampl * T_ampl;

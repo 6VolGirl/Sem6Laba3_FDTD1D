@@ -9,4 +9,6 @@ add_executable(Sem6Laba3_FDTD
         Monitor.cpp
         PMLAnalysis.cpp
         Material.cpp
+        DielectricAnalysis.cpp
+        SlabAnalysis.cpp
         main.cpp)

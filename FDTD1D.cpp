@@ -103,7 +103,7 @@ void FDTD1D::run() {
         // if (monitor_) {
         //     monitor_->record(Ex_);
         // }
-        for (FieldMonitor* mon : monitors_) mon->record(Ex_);
+        for (FieldMonitor* mon : monitors_) mon->record(Ex_, Hy_);
 
         // if ((n % p_.snapshotEvery) == 0) {
         //     snapshotsEx_.push_back(Ex_);
