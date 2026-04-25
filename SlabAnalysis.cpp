@@ -2,10 +2,10 @@
 // Created by 6anna on 25.04.2026.
 //
 
+
 #include "SlabAnalysis.h"
 
 
-#include "SlabAnalysis.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -81,16 +81,16 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
               << "  monTrans="  << monTransPos << "\n";
 
 
-    if (numSteps == 0) {
-        const double w          = 1.0 / base_.sourceFWidth;
-        const double distToSlab = static_cast<double>(slabStart - base_.source_pos);
-        const double roundTrip  = 2.0 * distToSlab / base_.courantNumber;
-        numSteps = static_cast<int>(roundTrip + 6.0 * w + 2000);
-        std::cout << "  auto numSteps = " << numSteps << "\n";
-    }
+    // if (numSteps == 0) {
+    //     const double w          = 1.0 / base_.sourceFWidth;
+    //     const double distToSlab = static_cast<double>(slabStart - base_.source_pos);
+    //     const double roundTrip  = 2.0 * distToSlab / base_.courantNumber;
+    //     numSteps = static_cast<int>(roundTrip + 6.0 * w + 2000);
+    //     std::cout << "  auto numSteps = " << numSteps << "\n";
+    // }
 
     SimulationParameters pRun = base_;
-    pRun.numTimeSteps  = numSteps;
+    //pRun.numTimeSteps  = numSteps;
 
 
     // mon — для отражения (incMon + totMon на одной позиции)
@@ -109,7 +109,7 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
     std::vector<double> transInc = transMon.data;
     transMon.clear();
 
-    //  с пластиной - totMon + transMon -----
+    //  с пластиной - totMon + transMon
     {
         MaterialLayout layout;
         layout.add(MaterialRegion::Silica(slabStart, slabEnd));
@@ -119,12 +119,10 @@ std::vector<SlabResult> SlabAnalysis::runSlab(double L_nm, int numSteps)
         simWork.attachMonitor(&transMon);          // правый: transmitted
         simWork.run();
 
-        simWork.writeFieldCSV(
-            "slab_L" + std::to_string(static_cast<int>(L_nm)) + "_field.csv");
-    }
+        simWork.writeFieldCSV("slab_L" + std::to_string(static_cast<int>(L_nm)) + "_field.csv");}
 
 
-    //   inc(t), tot(t), eref(t), trans(t) — всё в одном CSV
+    //   inc(t), tot(t), eref(t), trans(t)
     writeSlabTimeSeriesCSV(
         "slab_L" + std::to_string(static_cast<int>(L_nm)) + "nm_monitor.csv",
         mon.incMonitor(),

@@ -160,7 +160,7 @@ int main() {
             pSlab.sourceFWidth = 1.0/cfgSlab.lambdaMin - 1.0/cfgSlab.lambdaMax;
             pSlab.nx            = 2000;
             pSlab.source_pos    = 400;
-            pSlab.numTimeSteps  = 25000;
+            pSlab.numTimeSteps  = 16000;
 
             SlabAnalysis slabAn(pSlab, cfgSlab);
 
