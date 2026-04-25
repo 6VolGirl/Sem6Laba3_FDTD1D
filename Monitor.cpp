@@ -72,6 +72,33 @@ std::vector<std::pair<double,double>> Monitor::computeReflection(double fMin,
     return result;
 }
 
+std::vector<std::pair<double,double>> Monitor::computeTransmission(
+    const FieldMonitor& incMon,
+    const FieldMonitor& transMon,
+    double fMin, double fMax, int nFreqs) const
+{
+    //const int N = static_cast<int>(std::min(incMon.data.size(), transMon.data.size()));
+
+    std::vector<double> freqs(nFreqs);
+    const double df = (nFreqs > 1) ? (fMax - fMin) / (nFreqs - 1) : 0.0;
+    for (int i = 0; i < nFreqs; ++i) freqs[i] = fMin + i * df;
+
+    auto specInc   = dft(incMon.data,   dt_, freqs);
+    auto specTrans = dft(transMon.data, dt_, freqs);
+
+    double maxAmp = 0.0;
+    for (auto& c : specInc) maxAmp = std::max(maxAmp, std::abs(c));
+    const double threshold = maxAmp * 1e-3;
+
+    std::vector<std::pair<double,double>> result(nFreqs);
+    for (int i = 0; i < nFreqs; ++i) {
+        double ampInc = std::abs(specInc[i]);
+        double T = (ampInc > threshold) ? std::abs(specTrans[i]) / ampInc : 0.0;
+        result[i] = {freqs[i], T};
+    }
+    return result;
+}
+
 double Monitor::maxReflection(double fMin, double fMax, int nFreqs) const
 {
     auto spec = computeReflection(fMin, fMax, nFreqs);
@@ -124,6 +151,6 @@ void Monitor::writeTimeSeriesCSV(const std::string& filename) const
     for (int n = 0; n < N; ++n) {
         const double t    = n * dt_;
         const double eRef = tot[n] - inc[n];
-        out << n << "," << t << "," << inc[n] << "," << tot[n] << "," << eRef << "\n";
+        //out << n << "," << t << "," << inc[n] << "," << tot[n] << "," << eRef << "\n";
     }
 }

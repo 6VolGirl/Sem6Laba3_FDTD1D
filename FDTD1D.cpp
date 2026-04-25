@@ -53,7 +53,8 @@ double FDTD1D::sourceValue(double t) const {
 void FDTD1D::run() {
     snapshotsEx_.clear();
 
-    if (monitor_) monitor_->clear();
+    //if (monitor_) monitor_->clear();
+    for (FieldMonitor* mon : monitors_) mon->clear();
 
     //Учёт sigmaM
     std::vector<double> Da(p_.nx), Db(p_.nx);
@@ -99,9 +100,10 @@ void FDTD1D::run() {
             Ex_[p_.source_pos] -= (p_.dt / p_.eps0) * s;
         }
 
-        if (monitor_) {
-            monitor_->record(Ex_);
-        }
+        // if (monitor_) {
+        //     monitor_->record(Ex_);
+        // }
+        for (FieldMonitor* mon : monitors_) mon->record(Ex_);
 
         // if ((n % p_.snapshotEvery) == 0) {
         //     snapshotsEx_.push_back(Ex_);

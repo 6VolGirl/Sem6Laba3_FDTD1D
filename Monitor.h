@@ -63,6 +63,12 @@ public:
     std::vector<std::pair<double,double>> computeReflection(double fMin,
                                            double fMax, int nFreqs) const;
 
+    // Вычисляет спектр T(f) после двух прогонов
+    std::vector<std::pair<double,double>> computeTransmission(
+    const FieldMonitor& incMon,
+    const FieldMonitor& transMon,
+    double fMin, double fMax, int nFreqs) const;
+
     // Максимальное R в заданном диапазоне частот
     double maxReflection(double fMin, double fMax, int nFreqs) const;
 
