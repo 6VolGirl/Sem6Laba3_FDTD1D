@@ -9,6 +9,7 @@
 
 #include "FDTD1D.h"
 
+
 FDTD1D::FDTD1D(const SimulationParameters& p)
     : p_(p),
       Ex_(p.nx + 1, 0.0),
@@ -21,6 +22,24 @@ FDTD1D::FDTD1D(const SimulationParameters& p)
 {
     sigmaE_ = pml_.sigmaE;
     sigmaM_ = pml_.sigmaM;
+
+}
+
+FDTD1D::FDTD1D(const SimulationParameters& p, const MaterialLayout& layout)
+    : p_(p),
+      Ex_(p.nx + 1, 0.0),
+      Hy_(p.nx,     0.0),
+      eps_(p.nx + 1, p.eps0),   // сначала заполняем вакуумом
+      mu_ (p.nx,     p.mu0),
+      pml_(p.nx, p.pmlThickness, p.eps0, p.mu0,
+           p.pmlDamping, p.pmlProfilePower, p.dx),
+      cw_(p.sourceFreq),
+      gauss_(p.sourceFreq, p.sourceFWidth)
+{
+    sigmaE_ = pml_.sigmaE;
+    sigmaM_ = pml_.sigmaM;
+
+    layout.applyTo(eps_, mu_);
 }
 
 FDTD1D::FDTD1D(const SimulationParameters& p, const MaterialLayout& layout)
@@ -53,7 +72,8 @@ double FDTD1D::sourceValue(double t) const {
 void FDTD1D::run() {
     snapshotsEx_.clear();
 
-    if (monitor_) monitor_->clear();
+    //if (monitor_) monitor_->clear();
+    for (FieldMonitor* mon : monitors_) mon->clear();
 
     //Учёт sigmaM
     std::vector<double> Da(p_.nx), Db(p_.nx);
@@ -78,6 +98,9 @@ void FDTD1D::run() {
             Hy_[i] = Da[i] * Hy_[i] - Db[i] * (Ex_[i + 1] - Ex_[i]);
         }
 
+        for (FieldMonitor* mon : monitors_)
+            mon->record(Ex_, Hy_);
+
         // 2) Обновление Ex^{n+1} = Ex^n + dt/(eps*dx) * (Hy[i-1] - Hy[i])
         for (int i = 1; i < p_.nx; ++i) {
             Ex_[i] = Ca[i] * Ex_[i] - Cb[i] * (Hy_[i] - Hy_[i - 1]);
@@ -99,13 +122,15 @@ void FDTD1D::run() {
             Ex_[p_.source_pos] -= (p_.dt / p_.eps0) * s;
         }
 
-        if (monitor_) {
-            monitor_->record(Ex_);
-        }
+        // if (monitor_) {
+        //     monitor_->record(Ex_);
+        // }
+        //for (FieldMonitor* mon : monitors_) mon->record(Ex_, Hy_);
 
         if ((n % p_.snapshotEvery) == 0) {
             snapshotsEx_.push_back(Ex_);
         }
+
     }
 
     std::cout << "Simulation finished. Steps: " << p_.numTimeSteps

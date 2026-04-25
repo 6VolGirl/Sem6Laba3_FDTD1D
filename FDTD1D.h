@@ -14,7 +14,7 @@
 #include "Material.h"
 
 class FDTD1D {
-    const SimulationParameters& p_;    //удобнее по значению, а не поссылке
+    const SimulationParameters& p_;
 
     std::vector<double> Ex_;
     std::vector<double> Hy_;
@@ -24,7 +24,8 @@ class FDTD1D {
     std::vector<double> sigmaM_;
 
     PMLSigma pml_;
-    FieldMonitor* monitor_ = nullptr;
+    //FieldMonitor* monitor_ = nullptr;
+    std::vector<FieldMonitor*> monitors_;
 
     // Ex по времени для записи в CSV
     std::vector<std::vector<double>> snapshotsEx_;
@@ -33,18 +34,23 @@ class FDTD1D {
     CWSource cw_;
     GaussianSource gauss_;
 
+
+
     double sourceValue(double t) const;
 
 public:
     explicit FDTD1D(const SimulationParameters& p);
 
-    // Второй конструктор для материала
     FDTD1D(const SimulationParameters& p, const MaterialLayout& layout);
 
     void run();
     void writeFieldCSV(const std::string& filename) const;
 
-    void attachMonitor(FieldMonitor* mon) { monitor_ = mon; }
+    void attachMonitor(FieldMonitor* mon) {
+        if (mon) monitors_.push_back(mon);
+    }
+
+    void clearMonitors() { monitors_.clear(); }
 
 };
 

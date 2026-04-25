@@ -1,10 +1,9 @@
 //
-// Created by 6anna on 21.04.2026.
+// Created by 6anna on 24.04.2026.
 //
 
 #ifndef MATERIAL_H
 #define MATERIAL_H
-
 
 
 #include <vector>
@@ -37,7 +36,7 @@ struct MaterialRegion {
 };
 
 
-//  Коллекция материальных областей. Применяется к массивам eps_, mu_
+//  Коллекция материальных областей
 class MaterialLayout {
 private:
     std::vector<MaterialRegion> regions_;

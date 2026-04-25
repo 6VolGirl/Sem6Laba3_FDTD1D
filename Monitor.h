@@ -9,6 +9,7 @@
 #include <complex>
 #include <string>
 #include <cmath>
+#include <iomanip>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -18,15 +19,31 @@
 class FieldMonitor {
 public:
     int pos;
-    std::vector<double> data;  // Ex[pos][n]
+    std::vector<double> dataEx;  // Ex[pos][n]
+    std::vector<double> dataHy;
 
     explicit FieldMonitor(int position) : pos(position) {}
 
-    void record(const std::vector<double>& Ex) {
-        data.push_back(Ex[pos]);
+    void record(const std::vector<double>& Ex, const std::vector<double>& Hy) {
+        const int i = pos;
+        const double hy = (i > 0 && i < (int)Hy.size())
+                          ? 0.5 * (Hy[i - 1] + Hy[i])
+                          : Hy[std::min(i, (int)Hy.size() - 1)];
+        dataEx.push_back(Ex[i]);
+        dataHy.push_back(hy);
     }
 
-    void clear() { data.clear(); }
+    std::vector<double> poynting() const {
+        const int N = (int)std::min(dataEx.size(), dataHy.size());
+        std::vector<double> s(N);
+        for (int n = 0; n < N; ++n)
+            s[n] = dataEx[n] * dataHy[n];
+        return s;
+    }
+
+    void clear() { dataEx.clear(); dataHy.clear(); }
+
+    int size() const { return (int)dataEx.size(); }
 };
 
 
@@ -62,15 +79,22 @@ public:
     std::vector<std::pair<double,double>> computeReflection(double fMin,
                                            double fMax, int nFreqs) const;
 
+    // Вычисляет спектр T(f) после двух прогонов
+    std::vector<std::pair<double,double>> computeTransmission(
+    const FieldMonitor& incMon,
+    const FieldMonitor& transMon,
+    double fMin, double fMax, int nFreqs) const;
+
     // Максимальное R в заданном диапазоне частот
     double maxReflection(double fMin, double fMax, int nFreqs) const;
 
 
-    void writeReflectionCSV(const std::string& filename,
-                            double fMin, double fMax, int nFreqs) const;
-
-    // Временные ряды
+    // Временные ряды: Ex, Hy, S = Ex*Hy
     void writeTimeSeriesCSV(const std::string& filename) const;
+
+    // Запись для пластины с trans-монитором
+    void writeSlabTimeSeriesCSV(const std::string& filename,
+                                const FieldMonitor& transMon) const;
 
 
 };

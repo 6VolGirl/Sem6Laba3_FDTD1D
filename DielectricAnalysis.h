@@ -1,10 +1,9 @@
 //
-// Created by 6anna on 21.04.2026.
+// Created by 6anna on 24.04.2026.
 //
 
 #ifndef DIELECTRICANALYSIS_H
 #define DIELECTRICANALYSIS_H
-
 
 
 #include <vector>
@@ -34,8 +33,7 @@ public:
 
         int monitorOffset = 100;
 
-
-        double a_nm = 1.0;   // если dx = 1 нм, то a = 1 нм
+        double a_nm = 1.0;
     };
 private:
     SimulationParameters base_;
@@ -54,7 +52,7 @@ public:
         : base_(base), layout_(layout), cfgD_(cfg) {}
 
 
-    // Возвращает вектор {lambda_nm, R}
+    // Возвращает {lambda_nm, R}
     std::vector<std::pair<double,double>> run();
 
     // Теоретический R Френеля для нормального падения
@@ -78,8 +76,6 @@ public:
     }
 
 };
-
-
 
 
 #endif //DIELECTRICANALYSIS_H

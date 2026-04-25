@@ -1,5 +1,5 @@
 //
-// Created by 6anna on 21.04.2026.
+// Created by 6anna on 24.04.2026.
 //
 
 #include "DielectricAnalysis.h"
@@ -22,23 +22,19 @@ std::vector<std::pair<double,double>> DielectricAnalysis::run()
 
     // нет диэлектрика
     SimulationParameters pRef = base_;
-    pRef.pmlThickness    = std::max(30, base_.pmlThickness);
-    pRef.pmlDamping      = 1e-14;
-    pRef.pmlProfilePower = 3;
-
-    MaterialLayout emptyLayout;
-    // Override the base_ pml params for reference run via temporary copy
-    SimulationParameters pRefCopy = pRef;
-    FDTD1D simRef(pRefCopy, emptyLayout);
+    FDTD1D simRef(pRef);
     simRef.attachMonitor(&mon.incMonitor());
     simRef.run();
-
+    simRef.writeFieldCSV("field_Gauss_soft_inc.csv");
 
 
     // с диэлектриком
     FDTD1D simWork(base_, layout_);
     simWork.attachMonitor(&mon.totMonitor());
     simWork.run();
+    simRef.writeFieldCSV("field_Gauss_soft_Silica.csv");
+
+    mon.writeTimeSeriesCSV("C:\\Users\\6anna\\CLionProjects\\Sem6Laba3_FDTD\\cmake-build-debug\\monitor_timeseries.csv");
 
     simWork.writeFieldCSV("C:\\Users\\6anna\\CLionProjects\\Sem6Laba3_FDTD\\cmake-build-debug\\field_Gauss_soft_Silica.csv");
 
@@ -66,9 +62,7 @@ std::vector<std::pair<double,double>> DielectricAnalysis::run()
     return result_;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Запись CSV
-// ─────────────────────────────────────────────────────────────
+
 void DielectricAnalysis::writeCSV(const std::string& filename,
                                    double n1, double n2) const
 {
