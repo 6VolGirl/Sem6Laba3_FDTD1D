@@ -30,6 +30,11 @@ struct MaterialRegion {
         return MaterialRegion(start, end, 1.45 * 1.45, 1.0, "SiO2 (n=1.45)");
     }
 
+    // n = 2.28, eps = n^2 = 5.1984
+    static MaterialRegion TiO2(int start, int end) {
+        return MaterialRegion(start, end, 2.28 * 2.28, 1.0, "TiO2 (n=2.28)");
+    }
+
     static MaterialRegion Vacuum(int start, int end) {
         return MaterialRegion(start, end, 1.0, 1.0, "Vacuum");
     }
