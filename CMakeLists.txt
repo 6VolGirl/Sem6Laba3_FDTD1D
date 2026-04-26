@@ -11,4 +11,5 @@ add_executable(Sem6Laba3_FDTD
         Material.cpp
         DielectricAnalysis.cpp
         SlabAnalysis.cpp
+        PhotonCrystalAnalysis.cpp
         main.cpp)

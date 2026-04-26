@@ -12,6 +12,7 @@
 #include "PMLAnalysis.h"
 #include "DielectricAnalysis.h"
 #include "SlabAnalysis.h"
+#include "PhotonCrystalAnalysis.h"
 
 
 
@@ -125,7 +126,7 @@ int main() {
         //
         //     pDiel.nx = 2000;
         //     pDiel.source_pos = 600;
-        //     pDiel.numTimeSteps = 10000;
+        //     pDiel.numTimeSteps = 1000;
         //     pDiel.sourceFreq   = 0.5 * (1.0/cfgD.lambdaMax + 1.0/cfgD.lambdaMin);
         //     pDiel.sourceFWidth = 1.0/cfgD.lambdaMin - 1.0/cfgD.lambdaMax;
         //
@@ -140,32 +141,70 @@ int main() {
         //
         // }
 
-        //  Задания 3: анализ спектра отражения и пропускания кварцевой пластины (n = 1.45)
+        // //  Задания 3: анализ спектра отражения и пропускания кварцевой пластины (n = 1.45)
+        // {
+        //     SimulationParameters pSlab = base;
+        //
+        //
+        //
+        //     SlabAnalysis::ConfigSlab cfgSlab;
+        //     cfgSlab.lambdaMin     = 300.0;
+        //     cfgSlab.lambdaMax     = 900.0;
+        //     cfgSlab.nWavelengths  = 300;
+        //     cfgSlab.a_nm          = 1.0;
+        //     cfgSlab.monRefOffset  = 100;  // монитор R: source_pos - 100
+        //     cfgSlab.monTransOffset = 100; // монитор T: slabEnd + 50
+        //     cfgSlab.n1 = 1.0;
+        //     cfgSlab.n2 = 1.45;
+        //
+        //     pSlab.sourceFreq   = 0.5 * (1.0/cfgSlab.lambdaMax + 1.0/cfgSlab.lambdaMin);
+        //     pSlab.sourceFWidth = 1.0/cfgSlab.lambdaMin - 1.0/cfgSlab.lambdaMax;
+        //     pSlab.nx            = 2000;
+        //     pSlab.source_pos    = 400;
+        //     pSlab.numTimeSteps  = 10000;
+        //
+        //     SlabAnalysis slabAn(pSlab, cfgSlab);
+        //
+        //     // Задание 3.4: разные L
+        //     slabAn.runMultipleL({100.0, 200.0, 400.0}, "slab_");
+        // }
+
+        //  Задание 4: анализ спектра отражения и пропускания фотонный кристалл TiO2/SiO2
         {
-            SimulationParameters pSlab = base;
+            SimulationParameters basePC = base;
+            basePC.nx           = 5000;
+            basePC.numTimeSteps = 16000;
+            basePC.source_pos   = 500;
+            basePC.pmlThickness = 50;
 
+            const double fMin_src = 1.0 / 900.0;
+            const double fMax_src = 1.0 / 300.0;
+            basePC.sourceFreq   = 0.5 * (fMin_src + fMax_src);
+            basePC.sourceFWidth = fMax_src - fMin_src;
 
+            PhotonicCrystalAnalysis::ConfigPhot cfgPC;
+            cfgPC.n_A         = 2.28;     // TiO2
+            cfgPC.n_B         = 1.45;     // SiO2
+            cfgPC.d_A_equal   = 100.0;    // нм, равные физ. толщины
+            cfgPC.d_B_equal   = 100.0;
+            cfgPC.d_A_opt     = 55.0;     // нм, равные оптические пути (λ/4 @ ~500 нм)
+            cfgPC.d_B_opt     = 100.0;
+            cfgPC.lambdaMin   = 300.0;
+            cfgPC.lambdaMax   = 900.0;
+            cfgPC.nWavelengths = 400;
+            cfgPC.a_nm        = 1.0;
+            cfgPC.monRefOffset   = 150;
+            cfgPC.monTransOffset = 50;
 
-            SlabAnalysis::ConfigSlab cfgSlab;
-            cfgSlab.lambdaMin     = 300.0;
-            cfgSlab.lambdaMax     = 900.0;
-            cfgSlab.nWavelengths  = 300;
-            cfgSlab.a_nm          = 1.0;
-            cfgSlab.monRefOffset  = 100;  // монитор R: source_pos - 100
-            cfgSlab.monTransOffset = 100; // монитор T: slabEnd + 50
-            cfgSlab.n1 = 1.0;
-            cfgSlab.n2 = 1.45;
+            PhotonicCrystalAnalysis pcAnalysis(basePC, cfgPC);
 
-            pSlab.sourceFreq   = 0.5 * (1.0/cfgSlab.lambdaMax + 1.0/cfgSlab.lambdaMin);
-            pSlab.sourceFWidth = 1.0/cfgSlab.lambdaMin - 1.0/cfgSlab.lambdaMax;
-            pSlab.nx            = 2000;
-            pSlab.source_pos    = 400;
-            pSlab.numTimeSteps  = 10000;
+            const std::vector<int> periods = {1, 3, 5, 10};
 
-            SlabAnalysis slabAn(pSlab, cfgSlab);
+            // равные физические толщины
+            pcAnalysis.runEqualThickness(periods, "pc_");
 
-            // Задание 3.4: разные L
-            slabAn.runMultipleL({100.0, 200.0, 400.0}, "slab_");
+            // равные оптические пути
+            pcAnalysis.runEqualOptPath(periods, "pc_");
         }
 
         std::cout << "All runs finished.\n";
