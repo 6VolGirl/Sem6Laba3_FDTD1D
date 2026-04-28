@@ -115,6 +115,114 @@ Monitor::computeTransmission(const FieldMonitor& transWork,
 }
 
 
+
+std::vector<std::pair<double,double>>
+Monitor::computeReflectionPoynting(double fMin, double fMax, int nFreqs) const
+{
+    const int N = std::min(incMon_.size(), totMon_.size());
+    if (N == 0)
+        throw std::runtime_error("Monitor::computeReflectionPoynting: нет данных.");
+
+    // Разностные поля: E_ref = E_tot - E_inc
+    std::vector<double> exRef(N), hyRef(N);
+    for (int n = 0; n < N; ++n) {
+        exRef[n] = totMon_.dataEx[n] - incMon_.dataEx[n];
+        hyRef[n] = totMon_.dataHy[n] - incMon_.dataHy[n];
+    }
+
+    std::vector<double> freqs(nFreqs);
+    const double df = (nFreqs > 1) ? (fMax - fMin) / (nFreqs - 1) : 0.0;
+    for (int i = 0; i < nFreqs; ++i)
+        freqs[i] = fMin + i * df;
+
+    const std::vector<double> exIncVec(incMon_.dataEx.begin(), incMon_.dataEx.begin() + N);
+    const std::vector<double> hyIncVec(incMon_.dataHy.begin(), incMon_.dataHy.begin() + N);
+
+    auto specExInc = dft(exIncVec, dt_, freqs);
+    auto specHyInc = dft(hyIncVec, dt_, freqs);
+    auto specExRef = dft(exRef,    dt_, freqs);
+    auto specHyRef = dft(hyRef,    dt_, freqs);
+
+    // ── ИСПРАВЛЕНИЕ: порог через |S_inc|, а не просто S_inc > 0
+    double maxSinc = 0.0;
+    for (int i = 0; i < nFreqs; ++i) {
+        double s = std::abs(0.5 * std::real(specExInc[i] * std::conj(specHyInc[i])));
+        if (s > maxSinc) maxSinc = s;
+    }
+    const double threshold = maxSinc * 1e-6;
+
+    std::vector<std::pair<double,double>> result(nFreqs);
+    for (int i = 0; i < nFreqs; ++i) {
+        const double S_inc = 0.5 * std::real(specExInc[i] * std::conj(specHyInc[i]));
+        const double S_ref = 0.5 * std::real(specExRef[i] * std::conj(specHyRef[i]));
+
+        double R = 0.0;
+        if (std::abs(S_inc) > threshold) {
+            // ── ИСПРАВЛЕНИЕ: R = -S_ref / S_inc
+            // S_ref < 0 (волна идёт влево), S_inc > 0 (волна идёт вправо)
+            // поэтому знак "-" даёт R >= 0
+            R = -S_ref / S_inc;
+            if (R < 0.0) R = 0.0; // подавить численный шум
+        }
+        result[i] = {freqs[i], R};
+    }
+    return result;
+}
+
+std::vector<std::pair<double,double>>
+Monitor::computeTransmissionPoynting(const FieldMonitor& transWork,
+                                     const FieldMonitor& transInc,
+                                     double fMin, double fMax, int nFreqs) const
+{
+    const int N = std::min(transWork.size(), transInc.size());
+    if (N == 0)
+        throw std::runtime_error("Monitor::computeTransmissionPoynting: нет данных.");
+
+    const std::vector<double> exWork(transWork.dataEx.begin(),
+                                     transWork.dataEx.begin() + N);
+    const std::vector<double> hyWork(transWork.dataHy.begin(),
+                                     transWork.dataHy.begin() + N);
+    const std::vector<double> exInc(transInc.dataEx.begin(),
+                                    transInc.dataEx.begin() + N);
+    const std::vector<double> hyInc(transInc.dataHy.begin(),
+                                    transInc.dataHy.begin() + N);
+
+    // Сетка частот
+    std::vector<double> freqs(nFreqs);
+    const double df = (nFreqs > 1) ? (fMax - fMin) / (nFreqs - 1) : 0.0;
+    for (int i = 0; i < nFreqs; ++i)
+        freqs[i] = fMin + i * df;
+
+    // ДПФ: Ex и Hy отдельно для обоих мониторов
+    auto specExWork = dft(exWork, dt_, freqs);
+    auto specHyWork = dft(hyWork, dt_, freqs);
+    auto specExInc  = dft(exInc,  dt_, freqs);
+    auto specHyInc  = dft(hyInc,  dt_, freqs);
+
+    // Порог по максимуму S_inc_trans
+    double maxSinc = 0.0;
+    for (int i = 0; i < nFreqs; ++i) {
+        double s = 0.5 * std::real(specExInc[i] * std::conj(specHyInc[i]));
+        if (s > maxSinc) maxSinc = s;
+    }
+    const double threshold = maxSinc * 1e-3;
+
+    std::vector<std::pair<double,double>> result(nFreqs);
+    for (int i = 0; i < nFreqs; ++i) {
+        const double S_inc_trans = 0.5 * std::real(specExInc[i]  * std::conj(specHyInc[i]));
+        const double S_trans     = 0.5 * std::real(specExWork[i] * std::conj(specHyWork[i]));
+
+        double T = 0.0;
+        if (S_inc_trans > threshold)
+            T = S_trans / S_inc_trans;
+        if (T < 0.0) T = 0.0;   // численный шум
+
+        result[i] = {freqs[i], T};
+    }
+    return result;
+}
+
+
 double Monitor::maxReflection(double fMin, double fMax, int nFreqs) const
 {
     auto spec = computeReflection(fMin, fMax, nFreqs);

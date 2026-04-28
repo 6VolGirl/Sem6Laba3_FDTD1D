@@ -57,7 +57,8 @@ public:
 
     bool empty() const { return regions_.empty(); }
 
-
+    int addBraggCavity(int startCell, double nH, double nL, int dH_cells,
+                       int dL_cells, int nPairs, int dCav_cells);
 };
 
 

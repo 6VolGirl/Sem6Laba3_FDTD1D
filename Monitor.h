@@ -85,6 +85,20 @@ public:
     const FieldMonitor& transMon,
     double fMin, double fMax, int nFreqs) const;
 
+
+    std::vector<std::pair<double,double>> computeReflectionPoynting(double fMin,
+                                           double fMax, int nFreqs) const;
+
+    std::vector<std::pair<double,double>> computeTransmissionPoynting(const FieldMonitor& transWork,
+                                                         const FieldMonitor& transInc,
+                                                         double fMin, double fMax, int nFreqs) const;
+
+
+
+
+
+
+
     // Максимальное R в заданном диапазоне частот
     double maxReflection(double fMin, double fMax, int nFreqs) const;
 

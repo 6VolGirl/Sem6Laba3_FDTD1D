@@ -13,6 +13,7 @@
 #include "DielectricAnalysis.h"
 #include "SlabAnalysis.h"
 #include "PhotonCrystalAnalysis.h"
+#include "BraggMicrocavityAnalysis.h"
 
 
 
@@ -169,42 +170,71 @@ int main() {
         //     slabAn.runMultipleL({100.0, 200.0, 400.0}, "slab_");
         // }
 
-        //  Задание 4: анализ спектра отражения и пропускания фотонный кристалл TiO2/SiO2
+        // //  Задание 4: анализ спектра отражения и пропускания фотонный кристалл TiO2/SiO2
+        // {
+        //     SimulationParameters basePC = base;
+        //     basePC.nx           = 6000;
+        //     basePC.numTimeSteps = 1000000;
+        //     basePC.source_pos   = 500;
+        //
+        //     const double fMin_src = 1.0 / 900.0;
+        //     const double fMax_src = 1.0 / 300.0;
+        //     basePC.sourceFreq   = 0.5 * (fMin_src + fMax_src);
+        //     basePC.sourceFWidth = fMax_src - fMin_src;
+        //
+        //     PhotonicCrystalAnalysis::ConfigPhot cfgPC;
+        //     cfgPC.n_A         = 2.28;     // TiO2
+        //     cfgPC.n_B         = 1.45;     // SiO2
+        //     cfgPC.d_A_equal   = 100.0;    // нм, равные физ. толщины
+        //     cfgPC.d_B_equal   = 100.0;
+        //     cfgPC.d_A_opt     = 55.0;     // нм, равные оптические пути
+        //     cfgPC.d_B_opt     = 100.0;
+        //     cfgPC.lambdaMin   = 300.0;
+        //     cfgPC.lambdaMax   = 900.0;
+        //     cfgPC.nWavelengths = 400;
+        //     cfgPC.a_nm        = 1.0;
+        //     cfgPC.monRefOffset   = 150;
+        //     cfgPC.monTransOffset = 50;
+        //
+        //     PhotonicCrystalAnalysis pcAnalysis(basePC, cfgPC);
+        //
+        //     const std::vector<int> periods = {20};
+        //
+        //     // равные физические толщины
+        //     pcAnalysis.runEqualThickness(periods, "pc_");
+        //
+        //     // равные оптические пути
+        //     pcAnalysis.runEqualOptPath(periods, "pc_");
+        // }
+
+
         {
-            SimulationParameters basePC = base;
-            basePC.nx           = 5000;
-            basePC.numTimeSteps = 16000;
-            basePC.source_pos   = 500;
-            basePC.pmlThickness = 50;
+            CavityAnalysis::ConfigCavity cfgC;
+            cfgC.lambda0_nm     = 650.0;   // центр запрещённой зоны
+            cfgC.nH             = 2.3;     // TiO2
+            cfgC.nL             = 1.45;    // SiO2
+            cfgC.nCav           = 1.0;     // воздушная полость
+            cfgC.nPairs         = 5;       // 5 пар с каждой стороны
+            cfgC.lambdaMin      = 300.0;
+            cfgC.lambdaMax      = 900.0;
+            cfgC.nWavelengths   = 400;
+            cfgC.monRefOffset   = 150;
+            cfgC.monTransOffset = 50;
+            cfgC.fieldPrefix    = "cavity_field";
 
-            const double fMin_src = 1.0 / 900.0;
-            const double fMax_src = 1.0 / 300.0;
-            basePC.sourceFreq   = 0.5 * (fMin_src + fMax_src);
-            basePC.sourceFWidth = fMax_src - fMin_src;
+            // Увеличиваем число шагов для заполнения высокодобротной полости
+            SimulationParameters pCav = base;
+            pCav.nx            = 5000;
+            pCav.numTimeSteps  = 500000;
+            pCav.snapshotEvery = 100;
+            base.sourceFreq   = 0.5 * (1.0/cfgC.lambdaMin + 1.0/cfgC.lambdaMax);
+            base.sourceFWidth =        (1.0/cfgC.lambdaMin - 1.0/cfgC.lambdaMax);
+            base.sourceType   = SimulationParameters::GAUSS;
 
-            PhotonicCrystalAnalysis::ConfigPhot cfgPC;
-            cfgPC.n_A         = 2.28;     // TiO2
-            cfgPC.n_B         = 1.45;     // SiO2
-            cfgPC.d_A_equal   = 100.0;    // нм, равные физ. толщины
-            cfgPC.d_B_equal   = 100.0;
-            cfgPC.d_A_opt     = 55.0;     // нм, равные оптические пути (λ/4 @ ~500 нм)
-            cfgPC.d_B_opt     = 100.0;
-            cfgPC.lambdaMin   = 300.0;
-            cfgPC.lambdaMax   = 900.0;
-            cfgPC.nWavelengths = 400;
-            cfgPC.a_nm        = 1.0;
-            cfgPC.monRefOffset   = 150;
-            cfgPC.monTransOffset = 50;
-
-            PhotonicCrystalAnalysis pcAnalysis(basePC, cfgPC);
-
-            const std::vector<int> periods = {1, 3, 5, 10};
-
-            // равные физические толщины
-            pcAnalysis.runEqualThickness(periods, "pc_");
-
-            // равные оптические пути
-            pcAnalysis.runEqualOptPath(periods, "pc_");
+            CavityAnalysis cav(pCav, cfgC);
+            cav.runCavity();
+            cav.writeSpectraCSV("cavity_spectra.csv");
+            cav.writeFieldSnapshotsCSV("cavity_field");
         }
 
         std::cout << "All runs finished.\n";
